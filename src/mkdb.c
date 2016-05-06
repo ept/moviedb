@@ -545,7 +545,7 @@ int yearDataSort (struct yearData *y1, struct yearData *y2)
 TitleID processMoviesList (struct titleIndexRec *titles, TitleID *titleCount, AttributeID *attrCount)
 {
   char  *yrptr, *attrptr, *p ;
-  FILE  *listFp, *dbFp ; 
+  FILE  *listFp, *dbFp, *tsvFp ; 
   struct yearData *years ;
   char  line [ MXLINELEN ] ; 
   int   inMovie = FALSE ;
@@ -624,6 +624,17 @@ TitleID processMoviesList (struct titleIndexRec *titles, TitleID *titleCount, At
     putAttr ( years [ i ] . attrKey, dbFp ) ;
   }
   (void) fclose ( dbFp ) ;
+
+  tsvFp = writeFile ( DBDIR "movies.tsv" );
+  for ( i = 0 ; i < count ; i++ )
+  {
+    fprintf ( tsvFp, "%d\t%d\t%d\t%d\n",
+	    years [ i ] . titleKey,
+	    years [ i ] . yrfrom,
+	    years [ i ] . yrto,
+	    years [ i ] . attrKey ) ;
+  }
+  (void) fclose ( tsvFp ) ;
   return ( count ) ;
 }
 
@@ -841,7 +852,7 @@ void makeCastDatabaseTitlesIndex ( int listId, long nentries )
 }
 
 
-void writeCastEntry (struct castFilmography *currentEntry, FILE *stream)
+void writeCastEntry (struct castFilmography *currentEntry, FILE *stream, FILE *tsv)
 {
   int i ;
 
@@ -853,6 +864,12 @@ void writeCastEntry (struct castFilmography *currentEntry, FILE *stream)
     putFilmographyCounts ( currentEntry -> noWithAttr, currentEntry -> noWithoutAttr, stream ) ;
     for ( i = 0 ; i < currentEntry -> noWithAttr ; i++ )
     {
+      fprintf ( tsv, "%d\t%d\t%d\t", currentEntry -> nameKey,
+	      currentEntry -> withAttrs [ i ] . titleKey,
+	      currentEntry -> withAttrs [ i ] . attrKey ) ;
+      writeEscaped ( currentEntry -> withAttrs [ i ] . cname, tsv ) ;
+      fprintf ( tsv, "\t%d\n", currentEntry -> withAttrs [ i ] . position ) ;
+
       putTitle ( currentEntry -> withAttrs [ i ] . titleKey, stream ) ;
       putAttr ( currentEntry -> withAttrs [ i ] . attrKey, stream ) ;
       if ( currentEntry -> withAttrs [ i ] . cname == NULL )
@@ -867,6 +884,11 @@ void writeCastEntry (struct castFilmography *currentEntry, FILE *stream)
     }
     for ( i = 0 ; i < currentEntry -> noWithoutAttr ; i++ )
     {
+      fprintf ( tsv, "%d\t%d\t\\N\t", currentEntry -> nameKey,
+	      currentEntry -> withoutAttrs [ i ] . titleKey ) ;
+      writeEscaped ( currentEntry -> withoutAttrs [ i ] . cname, tsv ) ;
+      fprintf ( tsv, "\t%d\n", currentEntry -> withoutAttrs [ i ] . position ) ;
+
       putTitle ( currentEntry -> withoutAttrs [ i ] . titleKey, stream ) ;
       if ( currentEntry -> withoutAttrs [ i ] . cname == NULL )
         putByte ( 0, stream ) ;
@@ -884,7 +906,7 @@ void writeCastEntry (struct castFilmography *currentEntry, FILE *stream)
 
 long processCastList ( NameID *nameCount, struct titleIndexRec *titles, TitleID *titleCount, AttributeID *attrCount, int listId, int moviesOnly, int nochar )
 {
-  FILE   *listFp, *dbFp, *nameKeyFp, *tmpFp ;
+  FILE   *listFp, *dbFp, *nameKeyFp, *tmpFp, *tsvFp ;
   char   line [ MXLINELEN ] ;
   char   keyFileData [ MXLINELEN ] ;
   char   prevName [ MXLINELEN ] ;
@@ -917,6 +939,8 @@ long processCastList ( NameID *nameCount, struct titleIndexRec *titles, TitleID 
  
   (void) constructFilename ( fn, filmographyDefs [ listId ] .stem, DBSEXT ) ;
   dbFp = writeFile ( fn ) ;
+  (void) constructFilename ( fn, filmographyDefs [ listId ] .stem, "tsv" ) ;
+  tsvFp = writeFile ( fn ) ;
 
   while ( fgets ( line, MXLINELEN, listFp ) != NULL ) 
   {
@@ -940,7 +964,7 @@ long processCastList ( NameID *nameCount, struct titleIndexRec *titles, TitleID 
             else
               (void) strcpy ( prevName, line ) ;
 
-            writeCastEntry ( &currentEntry, dbFp ) ;
+            writeCastEntry ( &currentEntry, dbFp, tsvFp ) ;
             skipMode = FALSE ;
             namesOnList++ ;
             if ( tmpFp == NULL )
@@ -1047,9 +1071,11 @@ long processCastList ( NameID *nameCount, struct titleIndexRec *titles, TitleID 
 	foundMark = FALSE ;
     }
   }
-  writeCastEntry ( &currentEntry, dbFp ) ;
+  writeCastEntry ( &currentEntry, dbFp, tsvFp ) ;
+  namesOnList++ ;
   (void) fclose ( listFp ) ;
   (void) fclose ( dbFp ) ;
+  (void) fclose ( tsvFp ) ;
   if ( tmpFp != NULL )
   {
     (void) fprintf ( nameKeyFp, "%s|%s", keyFileData, keyPtr ) ;
@@ -1183,7 +1209,7 @@ void makeDatabaseTitlesIndex ( int listId, long nentries )
 }
 
 
-void writeFilmographyEntry (struct filmography *currentEntry, FILE *stream)
+void writeFilmographyEntry (struct filmography *currentEntry, FILE *stream, FILE *tsv )
 {
   int i ;
 
@@ -1197,16 +1223,23 @@ void writeFilmographyEntry (struct filmography *currentEntry, FILE *stream)
     {
       putTitle ( currentEntry -> withAttrs [ i ] . titleKey, stream ) ;
       putAttr ( currentEntry -> withAttrs [ i ] . attrKey, stream ) ;
+      fprintf ( tsv, "%d\t%d\t%d\n", currentEntry -> nameKey,
+	      currentEntry -> withAttrs [ i ] . titleKey,
+	      currentEntry -> withAttrs [ i ] . attrKey ) ;
     }
     for ( i = 0 ; i < currentEntry -> noWithoutAttr ; i++ )
+    {
       putTitle ( currentEntry -> withoutAttrs [ i ], stream ) ;
+      fprintf ( tsv, "%d\t%d\t\\N\n", currentEntry -> nameKey,
+	      currentEntry -> withoutAttrs [ i ] ) ;
+    }
   }
 }
 
 
 long processFilmographyList ( NameID *nameCount, struct titleIndexRec *titles, TitleID *titleCount, AttributeID *attrCount, int listId, int moviesOnly )
 {
-  FILE   *listFp, *dbFp, *nameKeyFp, *tmpFp ;
+  FILE   *listFp, *dbFp, *nameKeyFp, *tmpFp, *tsvFp ;
   char   line [ MXLINELEN ] ;
   char   keyFileData [ MXLINELEN ] ;
   char   prevName [ MXLINELEN ] ;
@@ -1238,6 +1271,8 @@ long processFilmographyList ( NameID *nameCount, struct titleIndexRec *titles, T
  
   (void) constructFilename ( fn, filmographyDefs [ listId ] .stem, DBSEXT ) ;
   dbFp = writeFile ( fn ) ;
+  (void) constructFilename ( fn, filmographyDefs [ listId ] .stem, "tsv" ) ;
+  tsvFp = writeFile ( fn ) ;
 
   while ( fgets ( line, MXLINELEN, listFp ) != NULL ) 
   {
@@ -1261,7 +1296,7 @@ long processFilmographyList ( NameID *nameCount, struct titleIndexRec *titles, T
             else
               (void) strcpy ( prevName, line ) ;
 
-            writeFilmographyEntry ( &currentEntry, dbFp ) ;
+            writeFilmographyEntry ( &currentEntry, dbFp, tsvFp ) ;
             skipMode = FALSE ;
             namesOnList++ ;
             if ( tmpFp == NULL )
@@ -1356,9 +1391,11 @@ long processFilmographyList ( NameID *nameCount, struct titleIndexRec *titles, T
 	foundMark = FALSE ;
     }
   }
-  writeFilmographyEntry ( &currentEntry, dbFp ) ;
+  writeFilmographyEntry ( &currentEntry, dbFp, tsvFp ) ;
+  namesOnList++ ;
   (void) fclose ( listFp ) ;
   (void) fclose ( dbFp ) ;
+  (void) fclose ( tsvFp ) ;
   if ( tmpFp != NULL )
   {
     (void) fprintf ( nameKeyFp, "%s|%s", keyFileData, keyPtr ) ;
@@ -1518,7 +1555,7 @@ void makeWriterDatabaseTitlesIndex ( int listId, long nentries )
 }
 
 
-void writeWriterFilmographyEntry (struct writerFilmography *currentEntry, FILE *stream)
+void writeWriterFilmographyEntry (struct writerFilmography *currentEntry, FILE *stream, FILE *tsv)
 {
   int i ;
 
@@ -1535,6 +1572,13 @@ void writeWriterFilmographyEntry (struct writerFilmography *currentEntry, FILE *
       putPosition ( currentEntry -> withAttrs [ i ] . lineOrder, stream ) ;
       putPosition ( currentEntry -> withAttrs [ i ] . groupOrder, stream ) ;
       putPosition ( currentEntry -> withAttrs [ i ] . subgroupOrder, stream ) ;
+
+      fprintf ( tsv, "%d\t%d\t%d\t%d\t%d\t%d\n", currentEntry -> nameKey,
+	      currentEntry -> withAttrs [ i ] . titleKey,
+	      currentEntry -> withAttrs [ i ] . attrKey,
+	      currentEntry -> withAttrs [ i ] . lineOrder,
+	      currentEntry -> withAttrs [ i ] . groupOrder,
+	      currentEntry -> withAttrs [ i ] . subgroupOrder ) ;
     }
     for ( i = 0 ; i < currentEntry -> noWithoutAttr ; i++ )
     {
@@ -1542,6 +1586,12 @@ void writeWriterFilmographyEntry (struct writerFilmography *currentEntry, FILE *
       putPosition ( currentEntry -> withoutAttrs [ i ] . lineOrder, stream ) ;
       putPosition ( currentEntry -> withoutAttrs [ i ] . groupOrder, stream ) ;
       putPosition ( currentEntry -> withoutAttrs [ i ] . subgroupOrder, stream ) ;
+
+      fprintf ( tsv, "%d\t%d\t\\N\t%d\t%d\t%d\n", currentEntry -> nameKey,
+	      currentEntry -> withoutAttrs [ i ] . titleKey,
+	      currentEntry -> withoutAttrs [ i ] . lineOrder,
+	      currentEntry -> withoutAttrs [ i ] . groupOrder,
+	      currentEntry -> withoutAttrs [ i ] . subgroupOrder ) ;
     }
   }
 }
@@ -1549,7 +1599,7 @@ void writeWriterFilmographyEntry (struct writerFilmography *currentEntry, FILE *
 
 long processWriterFilmographyList ( NameID *nameCount, struct titleIndexRec *titles, TitleID *titleCount, AttributeID *attrCount, int listId, int moviesOnly )
 {
-  FILE   *listFp, *dbFp, *nameKeyFp, *tmpFp ;
+  FILE   *listFp, *dbFp, *nameKeyFp, *tmpFp, *tsvFp ;
   char   line [ MXLINELEN ] ;
   char   keyFileData [ MXLINELEN ] ;
   char   prevName [ MXLINELEN ] ;
@@ -1582,6 +1632,8 @@ long processWriterFilmographyList ( NameID *nameCount, struct titleIndexRec *tit
  
   (void) constructFilename ( fn, filmographyDefs [ listId ] .stem, DBSEXT ) ;
   dbFp = writeFile ( fn ) ;
+  (void) constructFilename ( fn, filmographyDefs [ listId ] .stem, "tsv" ) ;
+  tsvFp = writeFile ( fn ) ;
 
   while ( fgets ( line, MXLINELEN, listFp ) != NULL ) 
   {
@@ -1605,7 +1657,7 @@ long processWriterFilmographyList ( NameID *nameCount, struct titleIndexRec *tit
             else
               (void) strcpy ( prevName, line ) ;
 
-            writeWriterFilmographyEntry ( &currentEntry, dbFp ) ;
+            writeWriterFilmographyEntry ( &currentEntry, dbFp, tsvFp ) ;
             skipMode = FALSE ;
             namesOnList++ ;
             if ( tmpFp == NULL )
@@ -1707,9 +1759,11 @@ long processWriterFilmographyList ( NameID *nameCount, struct titleIndexRec *tit
 	foundMark = FALSE ;
     }
   }
-  writeWriterFilmographyEntry ( &currentEntry, dbFp ) ;
+  writeWriterFilmographyEntry ( &currentEntry, dbFp, tsvFp ) ;
+  namesOnList++ ;
   (void) fclose ( listFp ) ;
   (void) fclose ( dbFp ) ;
+  (void) fclose ( tsvFp ) ;
   if ( tmpFp != NULL )
   {
     (void) fprintf ( nameKeyFp, "%s|%s", keyFileData, keyPtr ) ;

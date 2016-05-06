@@ -394,6 +394,33 @@ void putFilmographyCounts ( int noWithAttr, int noWithoutAttr, FILE *stream )
 }
 
 
+/* Writes a string to a file with escaping as understood by PostgreSQL COPY.
+ * http://www.postgresql.org/docs/current/static/sql-copy.html#AEN74375 */
+void writeEscaped ( char *str, FILE *stream )
+{
+  if ( str == NULL )
+  {
+    fprintf ( stream, "\\N" ) ;
+    return ;
+  }
+
+  while ( *str )
+  {
+    switch ( *str )
+    {
+      case '\b': fprintf ( stream, "\\b" ) ; break ;
+      case '\f': fprintf ( stream, "\\f" ) ; break ;
+      case '\n': fprintf ( stream, "\\n" ) ; break ;
+      case '\r': fprintf ( stream, "\\r" ) ; break ;
+      case '\t': fprintf ( stream, "\\t" ) ; break ;
+      case '\v': fprintf ( stream, "\\v" ) ; break ;
+      case '\\': fprintf ( stream, "\\\\" ) ; break ;
+      default:   fputc ( *str, stream ) ;
+    }
+    str++;
+  }
+}
+
 NameID getName (FILE *stream)
 {
   NameID  nameKey ;

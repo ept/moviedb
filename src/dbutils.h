@@ -25,6 +25,7 @@ void putFullOffset ( long offset, FILE *stream ) ;
 void putName ( NameID nameKey, FILE *stream ) ;
 void putString ( char *str, FILE *stream ) ;
 void putFilmographyCounts ( int noWithAttr, int noWithoutAttr, FILE *stream ) ;
+void writeEscaped ( char *str, FILE *stream ) ;
 
 NameID getName ( FILE *stream ) ;
 long getOffset ( FILE *stream ) ;
