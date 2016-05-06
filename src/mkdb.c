@@ -115,6 +115,8 @@ TitleID readMoviesList (struct titleIndexRec *titles)
           titles [ indexKey ] . title = duplicateString ( line ) ; 
           titles [ indexKey ] . titleKey = indexKey ;
           indexKey++ ;
+	  if ( indexKey >= MAXTITLES )
+	      moviedbError ( "mkdb: too many titles -- increase MAXTITLES" ) ;
        }
     }
     else 
@@ -137,6 +139,8 @@ TitleID readMoviesList (struct titleIndexRec *titles)
           titles [ indexKey ] . title = duplicateString ( line ) ; 
           titles [ indexKey ] . titleKey = indexKey ;
           indexKey++ ;
+	  if ( indexKey >= MAXTITLES )
+	      moviedbError ( "mkdb: too many titles -- increase MAXTITLES" ) ;
        }
     }
     else 
@@ -997,7 +1001,7 @@ long processCastList ( NameID *nameCount, struct titleIndexRec *titles, TitleID 
   
           if ( ( !skipMode ) && ( ( !moviesOnly ) || ( moviesOnly && *title != '"' ) ) )
           {
-            if ( attr == NULL || currentEntry . noWithAttr >= MAXWITHATTRS )
+            if ( attr == NULL )
             {
               currentEntry . withoutAttrs [ currentEntry . noWithoutAttr ] . titleKey = titleKeyLookup ( title, titles, titleCount ) ;
               if ( cname == NULL || nochar ) 
@@ -1006,6 +1010,11 @@ long processCastList ( NameID *nameCount, struct titleIndexRec *titles, TitleID 
                 currentEntry . withoutAttrs [ currentEntry . noWithoutAttr ] . cname = duplicateString ( cname ) ;
               currentEntry . withoutAttrs [ currentEntry . noWithoutAttr ] . position = position ;
               currentEntry . noWithoutAttr++ ; 
+	      if (currentEntry . noWithoutAttr >= MAXFILMOGRAPHIES)
+	      {
+		  printf ( "mkdb: too many appearances for %s, please increase MAXFILMOGRAPHIES\n", prevName ) ;
+		  moviedbError ( "mkdb: out of memory" ) ;
+	      }
             }
             else
             {
@@ -1017,6 +1026,11 @@ long processCastList ( NameID *nameCount, struct titleIndexRec *titles, TitleID 
                 currentEntry . withAttrs [ currentEntry . noWithAttr ] . cname = duplicateString ( cname ) ;
               currentEntry . withAttrs [ currentEntry . noWithAttr ] . position = position ;
               currentEntry . noWithAttr++ ; 
+	      if (currentEntry . noWithAttr >= MAXFILMOGRAPHIES)
+	      {
+		  printf ( "mkdb: too many appearances for %s, please increase MAXFILMOGRAPHIES\n", prevName ) ;
+		  moviedbError ( "mkdb: out of memory" ) ;
+	      }
             }
             nentries++ ;
           }
@@ -1094,6 +1108,8 @@ void makeDatabaseNamesIndex ( int listId, NameID namesOnList )
      namesIndex [ count ] . offset = offset ;
      offset = ftell ( dbFp ) ;
      count++ ;
+     if ( count >= namesOnList )
+	moviedbError ( "mkdb: too many entries in makeDatabaseNamesIndex" ) ;
   }
 
   (void) qsort ( (void*) namesIndex, (size_t) count, sizeof ( struct nameKeyOffset ), (int (*) (const void*, const void*)) nameKeyOffsetSort ) ;
@@ -1133,12 +1149,16 @@ void makeDatabaseTitlesIndex ( int listId, long nentries )
   {
     for ( j = 0 ; j < entry . noWithAttr ; j++ )
     {
+      if ( count > nentries )
+		moviedbError ( "mkdb: too many entries in makeDatabaseTitlesIndex" ) ;
       titlesIndex [ count ] . titleKey = entry . withAttrs [ j ] . titleKey ;
       titlesIndex [ count ] . offset = offset ;
       count++ ;
     }
     for ( j = 0 ; j < entry . noWithoutAttr ; j++ )
     {
+      if ( count > nentries )
+	    moviedbError ( "mkdb: too many entries in makeDatabaseTitlesIndex" ) ;
       titlesIndex [ count ] . titleKey = entry . withoutAttrs [ j ]  ;
       titlesIndex [ count ] . offset = offset ;
       count++ ;
@@ -1300,16 +1320,26 @@ long processFilmographyList ( NameID *nameCount, struct titleIndexRec *titles, T
   
           if ( ( !skipMode ) && ( ( !moviesOnly ) || ( moviesOnly && *title != '"' ) ) )
           {
-            if ( attr == NULL || currentEntry . noWithAttr >= MAXWITHATTRS )
+            if ( attr == NULL )
             {
               currentEntry . withoutAttrs [ currentEntry . noWithoutAttr ] = titleKeyLookup ( title, titles, titleCount ) ;
               currentEntry . noWithoutAttr++ ; 
+	      if (currentEntry . noWithoutAttr >= MAXFILMOGRAPHIES)
+	      {
+		  printf ( "mkdb: too many appearances for %s, please increase MAXFILMOGRAPHIES\n", prevName ) ;
+		  moviedbError ( "mkdb: out of memory" ) ;
+	      }
             }
             else
             {
               currentEntry . withAttrs [ currentEntry . noWithAttr ] . titleKey = titleKeyLookup ( title, titles, titleCount ) ;
               currentEntry . withAttrs [ currentEntry . noWithAttr ] . attrKey = attrKeyLookup ( attr, attrCount ) ;
               currentEntry . noWithAttr++ ; 
+	      if (currentEntry . noWithAttr >= MAXFILMOGRAPHIES)
+	      {
+		  printf ( "mkdb: too many appearances for %s, please increase MAXFILMOGRAPHIES\n", prevName ) ;
+		  moviedbError ( "mkdb: out of memory" ) ;
+	      }
             }
             nentries++ ;
           }
@@ -1635,13 +1665,18 @@ long processWriterFilmographyList ( NameID *nameCount, struct titleIndexRec *tit
   
           if ( ( !skipMode ) && ( ( !moviesOnly ) || ( moviesOnly && *title != '"' ) ) )
           {
-            if ( attr == NULL || currentEntry . noWithAttr >= MAXWITHATTRS )
+            if ( attr == NULL )
             {
               currentEntry . withoutAttrs [ currentEntry . noWithoutAttr ] . titleKey = titleKeyLookup ( title, titles, titleCount ) ;
               currentEntry . withoutAttrs [ currentEntry . noWithoutAttr ] . lineOrder = lineOrder ;
               currentEntry . withoutAttrs [ currentEntry . noWithoutAttr ] . groupOrder = groupOrder ;
               currentEntry . withoutAttrs [ currentEntry . noWithoutAttr ] . subgroupOrder = subgroupOrder ;
               currentEntry . noWithoutAttr++ ; 
+	      if (currentEntry . noWithoutAttr >= MAXFILMOGRAPHIES)
+	      {
+		  printf ( "mkdb: too many appearances for %s, please increase MAXFILMOGRAPHIES\n", prevName ) ;
+		  moviedbError ( "mkdb: out of memory" ) ;
+	      }
             }
             else
             {
@@ -1651,6 +1686,11 @@ long processWriterFilmographyList ( NameID *nameCount, struct titleIndexRec *tit
               currentEntry . withAttrs [ currentEntry . noWithAttr ] . groupOrder = groupOrder ;
               currentEntry . withAttrs [ currentEntry . noWithAttr ] . subgroupOrder = subgroupOrder ;
               currentEntry . noWithAttr++ ; 
+	      if (currentEntry . noWithAttr >= MAXFILMOGRAPHIES)
+	      {
+		  printf ( "mkdb: too many appearances for %s, please increase MAXFILMOGRAPHIES\n", prevName ) ;
+		  moviedbError ( "mkdb: out of memory" ) ;
+	      }
             }
             nentries++ ;
           }
