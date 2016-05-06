@@ -299,18 +299,24 @@ int caseCompare ( unsigned char *s1, unsigned char *s2 )
 
 void putPosition ( int i, FILE *stream)
 {
+  /* don't bother checking range -- some values greater than 255 occur
+   * in the data but we can tolerate corrupting them */
   (void) fputc ( i & 255, stream ) ;
 }
 
 
 void putByte ( int i, FILE *stream)
 {
+  if (i > 255)
+    moviedbError ( "error: byte must fit in 8 bits" );
   (void) fputc ( i & 255, stream ) ;
 }
 
 
 void putTitle ( TitleID titleKey, FILE *stream)
 {
+  if (titleKey > 0x00ffffff)
+    moviedbError ( "error: TitleID must fit in 24 bits" );
   (void) fputc ( titleKey & 255, stream ) ;
   (void) fputc ( ( titleKey >> 8 ) & 255, stream ) ;
   (void) fputc ( ( titleKey >> 16 ) & 255, stream ) ;
@@ -319,6 +325,8 @@ void putTitle ( TitleID titleKey, FILE *stream)
 
 void putAttr ( AttributeID attrKey, FILE *stream)
 {
+  if (attrKey > 0x00ffffff)
+    moviedbError ( "error: AttributeID must fit in 24 bits" );
   (void) fputc ( attrKey & 255, stream ) ;
   (void) fputc ( ( attrKey >> 8 ) & 255, stream ) ;
   (void) fputc ( ( attrKey >> 16 ) & 255, stream ) ;
@@ -327,6 +335,8 @@ void putAttr ( AttributeID attrKey, FILE *stream)
 
 void putInt (int i, FILE *stream)
 {
+  if (i > 0xffff)
+    moviedbError ( "error: int must fit in 16 bits" );
   (void) fputc ( i & 255, stream ) ;
   (void) fputc ( ( i >> 8 ) & 255, stream ) ;
 }
@@ -334,6 +344,8 @@ void putInt (int i, FILE *stream)
 
 void putOffset ( long offset, FILE *stream )
 {
+  if (offset > 0x00ffffff)
+    moviedbError ( "error: offset must fit in 24 bits" );
   (void) fputc ( offset & 255, stream ) ;
   (void) fputc ( ( offset >> 8 ) & 255, stream ) ;
   (void) fputc ( ( offset >> 16 ) & 255, stream ) ;
@@ -342,6 +354,8 @@ void putOffset ( long offset, FILE *stream )
 
 void putFullOffset ( long offset, FILE *stream )
 {
+  if (offset > 0xffffffff)
+    moviedbError ( "error: fullOffset must fit in 32 bits" );
   (void) fputc ( offset & 255, stream ) ;
   (void) fputc ( ( offset >> 8 ) & 255, stream ) ;
   (void) fputc ( ( offset >> 16 ) & 255, stream ) ;
@@ -351,6 +365,8 @@ void putFullOffset ( long offset, FILE *stream )
 
 void putName ( NameID nameKey, FILE *stream)
 {
+  if (nameKey > 0x00ffffff)
+    moviedbError ( "error: NameID must fit in 24 bits" );
   (void) fputc ( nameKey & 255, stream ) ;
   (void) fputc ( ( nameKey >> 8 ) & 255, stream ) ;
   (void) fputc ( ( nameKey >> 16 ) & 255, stream ) ;
@@ -366,12 +382,15 @@ void putString ( char *str, FILE *stream)
 
 void putFilmographyCounts ( int noWithAttr, int noWithoutAttr, FILE *stream )
 {
-  long i ;
+  if (noWithAttr > 0xffff)
+    moviedbError ( "error: noWithAttr must fit in 16 bits" );
+  if (noWithoutAttr > 0xffff)
+    moviedbError ( "error: noWithoutAttr must fit in 16 bits" );
 
-  i = ( ( noWithAttr & 4095 ) << 12 ) | ( noWithoutAttr & 4095 ) ;
-  (void) fputc ( i & 255, stream ) ;
-  (void) fputc ( ( i >> 8 ) & 255, stream ) ;
-  (void) fputc ( ( i >> 16 ) & 255, stream ) ;
+  (void) fputc ( noWithAttr & 255, stream ) ;
+  (void) fputc ( ( noWithAttr >> 8 ) & 255, stream ) ;
+  (void) fputc ( noWithoutAttr & 255, stream ) ;
+  (void) fputc ( ( noWithoutAttr >> 8 ) & 255, stream ) ;
 }
 
 
@@ -455,13 +474,15 @@ int getInt (FILE *stream)
 
 void getFilmographyCounts ( FILE *stream, int *noWithAttr, int*noWithoutAttr )
 {
-  long i ;
+  int i ;
 
   i = fgetc ( stream )  & 255 ;
   i |= fgetc ( stream ) << 8 ;
-  i |= fgetc ( stream ) << 16 ; 
-  *noWithAttr = ( i >> 12 )  & 4095 ;
-  *noWithoutAttr = i & 4095 ;
+  *noWithAttr = i ;
+
+  i = fgetc ( stream ) & 255 ;
+  i |= fgetc ( stream ) << 8 ;
+  *noWithoutAttr = i ;
 }
 
 
