@@ -344,11 +344,7 @@ void putInt (int i, FILE *stream)
 
 void putOffset ( long offset, FILE *stream )
 {
-  if (offset > 0x00ffffff)
-    moviedbError ( "error: offset must fit in 24 bits" );
-  (void) fputc ( offset & 255, stream ) ;
-  (void) fputc ( ( offset >> 8 ) & 255, stream ) ;
-  (void) fputc ( ( offset >> 16 ) & 255, stream ) ;
+  putFullOffset ( offset, stream ) ;
 }
 
 
@@ -434,12 +430,7 @@ NameID getName (FILE *stream)
 
 long getOffset (FILE *stream)
 {
-  long  offset ;
- 
-  offset = fgetc ( stream )  & 255 ;
-  offset |= fgetc ( stream ) << 8 ;
-  offset |= fgetc ( stream ) << 16 ; 
-  return ( offset ) ;
+  return getFullOffset ( stream ) ;
 }
 
 
