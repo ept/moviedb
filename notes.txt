@@ -7,6 +7,8 @@ the source and parse the list files with the following commands:
 
     $ make all
     $ etc/mkdb -movie   # Movies
+
+    # Filmographies (NO_OF_FILMOGRAPHY_LISTS):
     $ etc/mkdb -acr     # Actors
     $ etc/mkdb -acs     # Actresses
     $ etc/mkdb -cine    # Cinematographers
@@ -18,6 +20,23 @@ the source and parse the list files with the following commands:
     $ etc/mkdb -costdes # Costume Designers
     $ etc/mkdb -prdcr   # Producers
     $ etc/mkdb -misc    # Miscellaneous
+
+    # Title info (NO_OF_TITLE_INFO_LISTS):
+    $ etc/mkdb -time    # Running Times
+    $ etc/mkdb -cert    # Certificates
+    $ etc/mkdb -genre   # Genres
+    $ etc/mkdb -keyword # Keywords
+    $ etc/mkdb -prodco  # Production Company
+    $ etc/mkdb -dist    # Distributors
+    $ etc/mkdb -color   # Color Information
+    $ etc/mkdb -mix     # Sound Mix
+    $ etc/mkdb -cntry   # Country
+    $ etc/mkdb -rel     # Release Dates
+    $ etc/mkdb -loc     # Locations
+    $ etc/mkdb -tech    # Technical
+    $ etc/mkdb -lang    # Languages
+    $ etc/mkdb -sfxco   # Special Effects Company
+
     $ etc/mkdb -aka     # Aka Titles -- FIXME currently broken
     $ etc/mkdb -naka    # Aka Names -- FIXME currently broken
     $ etc/mkdb -plot    # Plot Summaries
@@ -27,27 +46,14 @@ the source and parse the list files with the following commands:
     $ etc/mkdb -quote   # Quotes
     $ etc/mkdb -triv    # Trivia
     $ etc/mkdb -mrr     # Movie Ratings -- FIXME currently broken
-    $ etc/mkdb -time    # Running Times
-    $ etc/mkdb -cert    # Certificates
-    $ etc/mkdb -genre   # Genres -- FIXME currently broken
-    $ etc/mkdb -keyword # Keywords -- FIXME currently broken
-    $ etc/mkdb -prodco  # Production Company -- FIXME currently broken
-    $ etc/mkdb -color   # Color Information -- FIXME currently broken
-    $ etc/mkdb -mix     # Sound Mix -- FIXME currently broken
-    $ etc/mkdb -cntry   # Country -- FIXME currently broken
-    $ etc/mkdb -rel     # Release Dates -- FIXME currently broken
-    $ etc/mkdb -loc     # Locations -- FIXME currently broken
     $ etc/mkdb -lit     # Literature -- FIXME currently broken
-    $ etc/mkdb -tech    # Technical -- FIXME currently broken
     $ etc/mkdb -link    # Movie Links
     $ etc/mkdb -tag     # Tag Lines
     $ etc/mkdb -castcom # Cast Completion
     $ etc/mkdb -crewcom # Crew Completion
     $ etc/mkdb -vers    # Alternate Versions
-    $ etc/mkdb -lang    # Languages -- FIXME currently broken
     $ etc/mkdb -bus     # Business -- FIXME currently broken
     $ etc/mkdb -ld      # LaserDisc
-    $ etc/mkdb -dist    # Distributors -- FIXME currently broken
     $ etc/mkdb -create
 
 It writes parsed output to the `dbs` subdirectory. Next, we can import that data into Postgres for
@@ -277,3 +283,134 @@ further processing. With Postgres running locally, run the following in `psql`:
     alter table credits add foreign key (movie_id) references movies (id);
     create unique index on credits (person_id, movie_id, type);
     create index on credits (movie_id);
+
+    create table certificates              (title_id int not null, value text not null, attr_id int);
+    create table color_info                (title_id int not null, value text not null, attr_id int);
+    create table countries                 (title_id int not null, value text not null, attr_id int);
+    create table distributors              (title_id int not null, value text not null, attr_id int);
+    create table genres                    (title_id int not null, value text not null, attr_id int);
+    create table keywords                  (title_id int not null, value text not null, attr_id int);
+    create table language                  (title_id int not null, value text not null, attr_id int);
+    create table locations                 (title_id int not null, value text not null, attr_id int);
+    create table production_companies      (title_id int not null, value text not null, attr_id int);
+    create table release_dates             (title_id int not null, value text not null, attr_id int);
+    create table running_times             (title_id int not null, value text not null, attr_id int);
+    create table sound_mix                 (title_id int not null, value text not null, attr_id int);
+    create table special_effects_companies (title_id int not null, value text not null, attr_id int);
+    create table technical                 (title_id int not null, value text not null, attr_id int);
+
+    copy certificates              from '/path/to/absolute/dbs/certificates.tsv'              (format text, encoding 'iso-8859-1');
+    copy color_info                from '/path/to/absolute/dbs/color-info.tsv'                (format text, encoding 'iso-8859-1');
+    copy countries                 from '/path/to/absolute/dbs/countries.tsv'                 (format text, encoding 'iso-8859-1');
+    copy distributors              from '/path/to/absolute/dbs/distributors.tsv'              (format text, encoding 'iso-8859-1');
+    copy genres                    from '/path/to/absolute/dbs/genres.tsv'                    (format text, encoding 'iso-8859-1');
+    copy keywords                  from '/path/to/absolute/dbs/keywords.tsv'                  (format text, encoding 'iso-8859-1');
+    copy language                  from '/path/to/absolute/dbs/language.tsv'                  (format text, encoding 'iso-8859-1');
+    copy locations                 from '/path/to/absolute/dbs/locations.tsv'                 (format text, encoding 'iso-8859-1');
+    copy production_companies      from '/path/to/absolute/dbs/production-companies.tsv'      (format text, encoding 'iso-8859-1');
+    copy release_dates             from '/path/to/absolute/dbs/release-dates.tsv'             (format text, encoding 'iso-8859-1');
+    copy running_times             from '/path/to/absolute/dbs/running-times.tsv'             (format text, encoding 'iso-8859-1');
+    copy sound_mix                 from '/path/to/absolute/dbs/sound-mix.tsv'                 (format text, encoding 'iso-8859-1');
+    copy special_effects_companies from '/path/to/absolute/dbs/special-effects-companies.tsv' (format text, encoding 'iso-8859-1');
+    copy technical                 from '/path/to/absolute/dbs/technical.tsv'                 (format text, encoding 'iso-8859-1');
+
+
+    create table movies_doc (id int primary key, title text not null, series_id int, is_series boolean not null, properties jsonb not null);
+
+    insert into movies_doc
+    select movies.id as id, title, series_id, is_series,
+        jsonb_strip_nulls(jsonb_build_object(
+            'year', properties->'year',
+            'year_to', properties->'year_to',
+            'info', properties->'info',
+            'suspended', properties->'suspended',
+            'certificates', certificate_arr,
+            'color_info', color_info_arr,
+            'countries', country_arr,
+            'distributors', distributor_arr,
+            'genres', genre_arr,
+            'keywords', keyword_arr,
+            'language', language_arr,
+            'locations', location_arr,
+            'prod_companies', prodco_arr,
+            'release_dates', reldate_arr,
+            'running_times', runtime_arr,
+            'sound_mix', sound_mix_arr,
+            'sfx_companies', sfxco_arr,
+            'technical', technical_arr)) as properties
+    from movies
+    left join (
+        select title_id, array_to_json(array_agg(value))::jsonb as country_arr from countries group by title_id
+    ) countries2 on countries2.title_id = movies.id
+    left join (
+        select title_id, array_to_json(array_agg(value))::jsonb as genre_arr from genres group by title_id
+    ) genres2 on genres2.title_id = movies.id
+    left join (
+        select title_id, array_to_json(array_agg(value))::jsonb as keyword_arr from keywords group by title_id
+    ) keywords2 on keywords2.title_id = movies.id
+    left join (
+        select title_id, array_to_json(array_agg(jsonb_strip_nulls(jsonb_build_object(
+            'certificate', value, 'note', attribute))))::jsonb as certificate_arr
+        from certificates
+        left join attributes on attributes.id = attr_id group by title_id
+    ) certificates2 on certificates2.title_id = movies.id
+    left join (
+        select title_id, array_to_json(array_agg(jsonb_strip_nulls(jsonb_build_object(
+            'color_info', value, 'note', attribute))))::jsonb as color_info_arr
+        from color_info
+        left join attributes on attributes.id = attr_id group by title_id
+    ) color_info2 on color_info2.title_id = movies.id
+    left join (
+        select title_id, array_to_json(array_agg(jsonb_strip_nulls(jsonb_build_object(
+            'company', value, 'note', attribute))))::jsonb as distributor_arr
+        from distributors
+        left join attributes on attributes.id = attr_id group by title_id
+    ) distributors2 on distributors2.title_id = movies.id
+    left join (
+        select title_id, array_to_json(array_agg(jsonb_strip_nulls(jsonb_build_object(
+            'language', value, 'note', attribute))))::jsonb as language_arr
+        from language
+        left join attributes on attributes.id = attr_id group by title_id
+    ) language2 on language2.title_id = movies.id
+    left join (
+        select title_id, array_to_json(array_agg(jsonb_strip_nulls(jsonb_build_object(
+            'location', value, 'note', attribute))))::jsonb as location_arr
+        from locations
+        left join attributes on attributes.id = attr_id group by title_id
+    ) locations2 on locations2.title_id = movies.id
+    left join (
+        select title_id, array_to_json(array_agg(jsonb_strip_nulls(jsonb_build_object(
+            'company', value, 'note', attribute))))::jsonb as prodco_arr
+        from production_companies
+        left join attributes on attributes.id = attr_id group by title_id
+    ) prodco2 on prodco2.title_id = movies.id
+    left join (
+        select title_id, array_to_json(array_agg(jsonb_strip_nulls(jsonb_build_object(
+            'release_date', value, 'note', attribute))))::jsonb as reldate_arr
+        from release_dates
+        left join attributes on attributes.id = attr_id group by title_id
+    ) release_dates2 on release_dates2.title_id = movies.id
+    left join (
+        select title_id, array_to_json(array_agg(jsonb_strip_nulls(jsonb_build_object(
+            'running_time', value, 'note', attribute))))::jsonb as runtime_arr
+        from running_times
+        left join attributes on attributes.id = attr_id group by title_id
+    ) running_times2 on running_times2.title_id = movies.id
+    left join (
+        select title_id, array_to_json(array_agg(jsonb_strip_nulls(jsonb_build_object(
+            'company', value, 'note', attribute))))::jsonb as sound_mix_arr
+        from sound_mix
+        left join attributes on attributes.id = attr_id group by title_id
+    ) sound_mix2 on sound_mix2.title_id = movies.id
+    left join (
+        select title_id, array_to_json(array_agg(jsonb_strip_nulls(jsonb_build_object(
+            'company', value, 'note', attribute))))::jsonb as sfxco_arr
+        from special_effects_companies
+        left join attributes on attributes.id = attr_id group by title_id
+    ) sfxco2 on sfxco2.title_id = movies.id
+    left join (
+        select title_id, array_to_json(array_agg(jsonb_strip_nulls(jsonb_build_object(
+            'info', value, 'note', attribute))))::jsonb as technical_arr
+        from technical
+        left join attributes on attributes.id = attr_id group by title_id
+    ) technical2 on technical2.title_id = movies.id;
