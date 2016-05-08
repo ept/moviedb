@@ -152,7 +152,7 @@ struct titleInfoDefRec titleInfoDefs [ NO_OF_TITLE_INFO_LISTS ] =
     { "-rel", RELLIST, RELDB, RELIDX, "Release Dates", "Release Date", "RELEASE DATES LIST\n", stdDisplay },
     { "-loc", LOCLIST, LOCDB, LOCIDX, "Locations", "Locations", "LOCATIONS LIST\n", stdDisplay },
     { "-lang", LANGLIST, LANGDB, LANGIDX, "Language", "Language", "LANGUAGE LIST\n", stdDisplay },
-    { "-sfxco", SFXCOLIST, SFXCODB, SFXCOIDX, "Special Effects Company", "Special Effects Company", "SFXCO COMPANIES LIST\n", stdDisplay },
+    { "-sfxco", SFXCOLIST, SFXCODB, SFXCOIDX, "Special Effects Company", "Special Effects Company", "SPECIAL EFFECTS COMPANIES LIST\n", stdDisplay },
 #ifdef INTERNAL
     { "-miscco", MSCCOLIST, MSCCODB, MSCCOIDX, "Miscellaneous Company", "Miscellaneous Company", "MISCELLANEOUS COMPANY LIST\n", stdDisplay }
 #endif
