@@ -2726,15 +2726,20 @@ NameID processAkaNamesList ( NameID *nameCount )
 TitleID processTitleInfoList ( struct titleIndexRec *titles, TitleID *titleCount, AttributeID *attrCount, int listId )
 {
   char  *tmptr, *attrptr ;
-  FILE  *listFp, *dbFp, *indexFp ; 
+  FILE  *listFp, *dbFp, *tsvFp, *indexFp ; 
   struct titleKeyOffset *titlesIndex = sharedTitleIndex ;
   char  line [ MXLINELEN ] ; 
+  char  fn [ MAXPATHLEN ] ;
   int   inMovie = FALSE ;
   TitleID   count = 0, i, titleKey, prevTitleKey = NOTITLE, idxCount = 0 ;
   AttributeID attrKey ;
 
   listFp = openFile ( titleInfoDefs [ listId ] . list ) ;
   dbFp = writeFile ( titleInfoDefs [ listId ] . db ) ;
+
+  strcpy ( fn, titleInfoDefs [ listId ] . db ) ;
+  strcpy ( strrchr ( fn, '.' ), ".tsv" ) ;
+  tsvFp = writeFile ( fn ) ;
    
   while ( fgets ( line, MXLINELEN, listFp ) != NULL ) 
     if ( inMovie && ( strncmp ( line, "-------", 5 ) == 0 ) ) 
@@ -2768,7 +2773,12 @@ TitleID processTitleInfoList ( struct titleIndexRec *titles, TitleID *titleCount
           putByte ( strlen ( tmptr), dbFp ) ;
           putString ( tmptr, dbFp ) ;
           putAttr ( attrKey, dbFp ) ;
+
+	  fprintf ( tsvFp, "%d\t", titleKey ) ;
+	  writeEscaped ( tmptr, tsvFp ) ;
+	  if ( attrKey == NOATTR ) fprintf ( tsvFp, "\t\\N\n" ); else fprintf ( tsvFp, "\t%d\n", attrKey ) ;
           count++ ;     
+
 	 if (count >= sharedTitleIndexSize)
 	 {
 	   sharedTitleIndexSize += TIGROW ;
@@ -2788,6 +2798,7 @@ TitleID processTitleInfoList ( struct titleIndexRec *titles, TitleID *titleCount
   
   (void) fclose ( listFp ) ;
   (void) fclose ( dbFp ) ;
+  (void) fclose ( tsvFp ) ;
 
   (void) qsort ( (void*) titlesIndex, (size_t) idxCount, sizeof ( struct titleKeyOffset ), (int (*) (const void*, const void*)) titleKeyOffsetSort ) ;
   indexFp = writeFile ( titleInfoDefs [ listId ] . index ) ;
