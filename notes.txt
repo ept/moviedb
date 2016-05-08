@@ -414,3 +414,34 @@ further processing. With Postgres running locally, run the following in `psql`:
         from technical
         left join attributes on attributes.id = attr_id group by title_id
     ) technical2 on technical2.title_id = movies.id;
+
+
+
+
+How mkdb works:
+
+For movies.list:
+count = processMoviesList ( titles, &titleCount, &attrCount ) ;
+
+For actors.list and actresses.list:
+listCount = processCastList ( &nameCount, titles, &titleCount, &attrCount, i, moviesOnly, nochar ) ;
+
+For writers.list:
+listCount = processWriterFilmographyList ( &nameCount, titles, &titleCount, &attrCount, i, moviesOnly ) ;
+
+For all other lists:
+listCount = processFilmographyList ( &nameCount, titles, &titleCount, &attrCount, i, moviesOnly ) ;
+
+
+
+
+Other IMDB parser implementations:
+
+* [imdb-data-parser](https://github.com/dedeler/imdb-data-parser) (very incomplete and doesn't quite parse correctly)
+* [imdb2json](https://github.com/oxplot/imdb2json)
+* [IMDbPY](http://imdbpy.sourceforge.net/)
+
+See also:
+
+* [Guide on file format](https://contribute.imdb.com/updates/guide/title_formats)
+* [Discussion thread on IMDB bulk data access](https://getsatisfaction.com/imdb/topics/api_bulk_data_access)
