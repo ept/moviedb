@@ -37,6 +37,7 @@ drop table if exists movies;
 drop table if exists people;
 drop table if exists credits;
 drop table if exists movies_doc;
+drop table if exists people_doc;
 drop type  if exists credit_type;
 
 -- Re-create fresh tables

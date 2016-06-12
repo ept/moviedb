@@ -93,3 +93,12 @@ psql < "import1.sql"
 ) | psql
 
 psql < "import2.sql"
+
+# The backslash madness simply replaces two backslashes in the data by one (to undo
+# the escaping added by Postgres in the text output format). Here we have to write
+# eight backslashes because the command goes through three levels of un-escaping:
+# 1. in the shell running this script,
+# 2. in the psql command interpreter,
+# 3. in the shell invoked by Postgres to execute the output command.
+echo "copy movies_doc to program 'sed -e "s/\\\\\\\\\\\\\\\\/\\\\\\\\/g" | gzip > $DIR/movies_doc.json.gz' encoding 'utf-8';" | psql
+echo "copy people_doc to program 'sed -e "s/\\\\\\\\\\\\\\\\/\\\\\\\\/g" | gzip > $DIR/people_doc.json.gz' encoding 'utf-8';" | psql

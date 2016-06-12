@@ -101,8 +101,18 @@ create table people (
     properties jsonb not null
 );
 
-insert into people (select name_id, name, json_build_object('gender', 'male')   from actors    join names on name_id = names.id);
-insert into people (select name_id, name, json_build_object('gender', 'female') from actresses join names on name_id = names.id) on conflict do nothing;
+insert into people (
+    select name_id, name, json_build_object('gender', 'male')
+    from (select distinct name_id from actors) male
+    join names on name_id = names.id
+);
+
+insert into people (
+    select name_id, name, json_build_object('gender', 'female')
+    from (select distinct name_id from actresses) female
+    join names on name_id = names.id
+) on conflict do nothing;
+
 insert into people (select id, name, '{}'::jsonb from names) on conflict do nothing;
 
 create type credit_type as enum (
@@ -208,6 +218,13 @@ delete from credits where ctid in (
         and c1.ctid < c2.ctid
 );
 
+-- Delete credits that reference a nonexistent movie, for whatever reason
+delete from credits where movie_id in (
+    select movie_id from credits
+    left join movies on movies.id = movie_id
+    where movies.id is null
+);
+
 alter table credits add foreign key (person_id) references people (id);
 alter table credits add foreign key (movie_id) references movies (id);
 create unique index on credits (person_id, movie_id, type);
@@ -215,46 +232,43 @@ create index on credits (movie_id);
 
 
 
-create table movies_doc (id int primary key, properties jsonb not null);
+create table movies_doc (properties jsonb not null);
 
 insert into movies_doc
-select movies.id as id,
-    jsonb_strip_nulls(jsonb_build_object(
-        'id',                   movies.id,
-        'title',                title,
-        'year',                 properties->'year',
-        'year_to',              properties->'year_to',
-        'info',                 properties->'info',
-        'suspended',            properties->'suspended',
-        'actors',               credits_obj->'actor',
-        'cinematographers',     credits_obj->'cinematographer',
-        'composers',            credits_obj->'composer',
-        'costume_designers',    credits_obj->'costume_designer',
-        'directors',            credits_obj->'director',
-        'editors',              credits_obj->'editor',
-        'miscellaneous',        credits_obj->'miscellaneous',
-        'producers',            credits_obj->'producer',
-        'production_designers', credits_obj->'production_designer',
-        'writers',              credits_obj->'writer',
-        'certificates',         certificate_arr,
-        'color_info',           color_info_arr,
-        'countries',            country_arr,
-        'distributors',         distributor_arr,
-        'genres',               genre_arr,
-        'keywords',             keyword_arr,
-        'language',             language_arr,
-        'locations',            location_arr,
-        'prod_companies',       prodco_arr,
-        'release_dates',        reldate_obj,
-        'running_times',        runtime_arr,
-        'sound_mix',            sound_mix_arr,
-        'sfx_companies',        sfxco_arr,
-        'technical',            technical_obj)) as properties
+select jsonb_strip_nulls(jsonb_build_object(
+    'id',                   movies.id,
+    'title',                title,
+    'year',                 properties->'year',
+    'info',                 properties->'info',
+    'actors',               credits_obj->'actor',
+    'cinematographers',     credits_obj->'cinematographer',
+    'composers',            credits_obj->'composer',
+    'costume_designers',    credits_obj->'costume_designer',
+    'directors',            credits_obj->'director',
+    'editors',              credits_obj->'editor',
+    'miscellaneous',        credits_obj->'miscellaneous',
+    'producers',            credits_obj->'producer',
+    'production_designers', credits_obj->'production_designer',
+    'writers',              credits_obj->'writer',
+    'certificates',         certificate_arr,
+    'color_info',           color_info_arr,
+    'countries',            country_arr,
+    'distributors',         distributor_arr,
+    'genres',               genre_arr,
+    'keywords',             keyword_arr,
+    'language',             language_arr,
+    'locations',            location_arr,
+    'prod_companies',       prodco_arr,
+    'release_dates',        reldate_obj,
+    'running_times',        runtime_arr,
+    'sound_mix',            sound_mix_arr,
+    'sfx_companies',        sfxco_arr,
+    'technical',            technical_obj)) as properties
 from movies
 left join (
     select movie_id, jsonb_object_agg(type, items) credits_obj from (
-        select movie_id, type, jsonb_agg(jsonb_set(jsonb_set(credits.properties,
-            '{id}', to_jsonb(person_id)), '{name}', to_jsonb(name))
+        select movie_id, type, jsonb_agg(credits.properties ||
+            jsonb_build_object('person_id', person_id, 'name', name)
             order by credits.properties->'position', credits.properties->'line_order',
             credits.properties->'group_order', credits.properties->'subgroup_order', name) as items
         from credits join people on person_id = people.id
@@ -367,4 +381,33 @@ left join (
         from technical left join attributes on attributes.id = attr_id group by title_id, key
     ) technical2 group by title_id
 ) technical3 on technical3.title_id = movies.id
-where series_id is null and not is_series;
+where series_id is null and not is_series and title ~ '\(\d{4}[^\)]*\)$';
+
+
+create table people_doc (properties jsonb not null);
+
+insert into people_doc
+select jsonb_strip_nulls(jsonb_build_object(
+    'id',                     people.id,
+    'name',                   name,
+    'gender',                 properties->'gender',
+    'actor_in',               credits_obj->'actor',
+    'cinematographer_in',     credits_obj->'cinematographer',
+    'composer_in',            credits_obj->'composer',
+    'costume_designer_in',    credits_obj->'costume_designer',
+    'director_in',            credits_obj->'director',
+    'editor_in',              credits_obj->'editor',
+    'miscellaneous_in',       credits_obj->'miscellaneous',
+    'producer_in',            credits_obj->'producer',
+    'production_designer_in', credits_obj->'production_designer',
+    'writer_in',              credits_obj->'writer')) as properties
+from people join (
+    select person_id, jsonb_object_agg(type, items) as credits_obj from (
+        select person_id, type, jsonb_agg(credits.properties || jsonb_build_object(
+            'movie_id', movie_id, 'title', title) order by movies.properties->>'year', title) as items
+        from credits
+        join movies on movies.id = movie_id
+        where series_id is null and not is_series and title ~ '\(\d{4}[^\)]*\)$' -- same filtering condition as for movies_doc
+        group by person_id, type
+    ) credits2 group by person_id
+) credits3 on credits3.person_id = people.id;
