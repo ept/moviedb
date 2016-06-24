@@ -239,7 +239,6 @@ select jsonb_strip_nulls(jsonb_build_object(
     'id',                   movies.id,
     'title',                title,
     'year',                 properties->'year',
-    'info',                 properties->'info',
     'actors',               credits_obj->'actor',
     'cinematographers',     credits_obj->'cinematographer',
     'composers',            credits_obj->'composer',
@@ -381,7 +380,7 @@ left join (
         from technical left join attributes on attributes.id = attr_id group by title_id, key
     ) technical2 group by title_id
 ) technical3 on technical3.title_id = movies.id
-where series_id is null and not is_series and title ~ '\(\d{4}[^\)]*\)$';
+where series_id is null and not is_series and properties->>'suspended' is null and title ~ '\(\d{4}[^\)]*\)$';
 
 
 create table people_doc (properties jsonb not null);
@@ -407,7 +406,8 @@ from people join (
             'movie_id', movie_id, 'title', title) order by movies.properties->>'year', title) as items
         from credits
         join movies on movies.id = movie_id
-        where series_id is null and not is_series and title ~ '\(\d{4}[^\)]*\)$' -- same filtering condition as for movies_doc
+        where series_id is null and not is_series and movies.properties->>'suspended' is null
+            and title ~ '\(\d{4}[^\)]*\)$' -- same filtering condition as for movies_doc
         group by person_id, type
     ) credits2 group by person_id
 ) credits3 on credits3.person_id = people.id;

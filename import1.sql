@@ -33,9 +33,9 @@ drop table if exists special_effects_companies;
 drop table if exists technical;
 
 -- Tables that are derived from the above
+drop table if exists credits;
 drop table if exists movies;
 drop table if exists people;
-drop table if exists credits;
 drop table if exists movies_doc;
 drop table if exists people_doc;
 drop type  if exists credit_type;
