@@ -245,24 +245,17 @@ select jsonb_strip_nulls(jsonb_build_object(
     'costume_designers',    credits_obj->'costume_designer',
     'directors',            credits_obj->'director',
     'editors',              credits_obj->'editor',
-    'miscellaneous',        credits_obj->'miscellaneous',
     'producers',            credits_obj->'producer',
     'production_designers', credits_obj->'production_designer',
     'writers',              credits_obj->'writer',
     'certificates',         certificate_arr,
     'color_info',           color_info_arr,
-    'countries',            country_arr,
-    'distributors',         distributor_arr,
     'genres',               genre_arr,
     'keywords',             keyword_arr,
     'language',             language_arr,
     'locations',            location_arr,
-    'prod_companies',       prodco_arr,
     'release_dates',        reldate_obj,
-    'running_times',        runtime_arr,
-    'sound_mix',            sound_mix_arr,
-    'sfx_companies',        sfxco_arr,
-    'technical',            technical_obj)) as properties
+    'running_times',        runtime_arr)) as properties
 from movies
 left join (
     select movie_id, jsonb_object_agg(type, items) credits_obj from (
@@ -274,10 +267,6 @@ left join (
         group by movie_id, type
     ) credits2 group by movie_id
 ) credits3 on credits3.movie_id = movies.id
-left join (
-    select title_id, jsonb_agg(value order by value) as country_arr
-    from countries group by title_id
-) countries2 on countries2.title_id = movies.id
 left join (
     select title_id, jsonb_agg(value order by value) as genre_arr
     from genres group by title_id
@@ -302,12 +291,6 @@ left join (
 ) color_info2 on color_info2.title_id = movies.id
 left join (
     select title_id, jsonb_agg(jsonb_strip_nulls(jsonb_build_object(
-        'company', value, 'note', attribute)) order by value, attribute) as distributor_arr
-    from distributors
-    left join attributes on attributes.id = attr_id group by title_id
-) distributors2 on distributors2.title_id = movies.id
-left join (
-    select title_id, jsonb_agg(jsonb_strip_nulls(jsonb_build_object(
         'language', value, 'note', attribute)) order by value, attribute) as language_arr
     from language
     left join attributes on attributes.id = attr_id group by title_id
@@ -318,12 +301,6 @@ left join (
     from locations
     left join attributes on attributes.id = attr_id group by title_id
 ) locations2 on locations2.title_id = movies.id
-left join (
-    select title_id, jsonb_agg(jsonb_strip_nulls(jsonb_build_object(
-        'company', value, 'note', attribute)) order by value, attribute) as prodco_arr
-    from production_companies
-    left join attributes on attributes.id = attr_id group by title_id
-) prodco2 on prodco2.title_id = movies.id
 left join (
     select title_id, jsonb_object_agg(country, dates) as reldate_obj
     from (
@@ -351,35 +328,6 @@ left join (
     from running_times
     left join attributes on attributes.id = attr_id group by title_id
 ) running_times2 on running_times2.title_id = movies.id
-left join (
-    select title_id, jsonb_agg(jsonb_strip_nulls(jsonb_build_object(
-        'info', value, 'note', attribute)) order by value, attribute) as sound_mix_arr
-    from sound_mix
-    left join attributes on attributes.id = attr_id group by title_id
-) sound_mix2 on sound_mix2.title_id = movies.id
-left join (
-    select title_id, jsonb_agg(jsonb_strip_nulls(jsonb_build_object(
-        'company', value, 'note', attribute)) order by value, attribute) as sfxco_arr
-    from special_effects_companies
-    left join attributes on attributes.id = attr_id group by title_id
-) sfxco2 on sfxco2.title_id = movies.id
-left join (
-    select title_id, jsonb_object_agg(key, info) as technical_obj from (
-        select title_id, case
-            when split_part(value, ':', 1) = 'CAM' then 'camera_lens'
-            when split_part(value, ':', 1) = 'MET' then 'length_meters'
-            when split_part(value, ':', 1) = 'OFM' then 'negative_format'
-            when split_part(value, ':', 1) = 'PFM' then 'printed_format'
-            when split_part(value, ':', 1) = 'RAT' then 'aspect_ratio'
-            when split_part(value, ':', 1) = 'PCS' then 'process'
-            when split_part(value, ':', 1) = 'LAB' then 'laboratory'
-            else 'unknown'
-        end as key, jsonb_agg(jsonb_strip_nulls(jsonb_build_object(
-            'info', regexp_replace(value, '^[A-Z]{3}:', ''), 'note', attribute
-        )) order by value, attribute) as info
-        from technical left join attributes on attributes.id = attr_id group by title_id, key
-    ) technical2 group by title_id
-) technical3 on technical3.title_id = movies.id
 where series_id is null and not is_series and properties->>'suspended' is null and title ~ '\(\d{4}[^\)]*\)$';
 
 
@@ -396,7 +344,6 @@ select jsonb_strip_nulls(jsonb_build_object(
     'costume_designer_in',    credits_obj->'costume_designer',
     'director_in',            credits_obj->'director',
     'editor_in',              credits_obj->'editor',
-    'miscellaneous_in',       credits_obj->'miscellaneous',
     'producer_in',            credits_obj->'producer',
     'production_designer_in', credits_obj->'production_designer',
     'writer_in',              credits_obj->'writer')) as properties
@@ -408,6 +355,7 @@ from people join (
         join movies on movies.id = movie_id
         where series_id is null and not is_series and movies.properties->>'suspended' is null
             and title ~ '\(\d{4}[^\)]*\)$' -- same filtering condition as for movies_doc
+            and type <> 'miscellaneous'
         group by person_id, type
     ) credits2 group by person_id
 ) credits3 on credits3.person_id = people.id;
