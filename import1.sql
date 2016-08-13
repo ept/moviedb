@@ -2,6 +2,7 @@
 -- of parsing the IMDB data files.
 
 -- Tables into which raw data is loaded
+drop table if exists top_titles;
 drop table if exists titles;
 drop table if exists names;
 drop table if exists attributes;
@@ -37,10 +38,13 @@ drop table if exists credits;
 drop table if exists movies;
 drop table if exists people;
 drop table if exists movies_doc;
+drop table if exists movies_doc_small;
 drop table if exists people_doc;
+drop table if exists people_doc_small;
 drop type  if exists credit_type;
 
 -- Re-create fresh tables
+create table top_titles (title text not null);
 create table titles     (id int, title text not null,     hexid text);
 create table names      (id int, name text not null,      hexid text);
 create table attributes (id int, attribute text not null, hexid text);

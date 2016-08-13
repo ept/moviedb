@@ -61,6 +61,7 @@ etc/mkdb -create
 psql < "import1.sql"
 
 (
+    echo "copy top_titles (title)            from '$DIR/top_titles.txt'     (format text, encoding 'utf-8');"
     echo "copy titles     (title, hexid)     from '$DIR/dbs/titles.key'     (format text, delimiter '|', encoding 'iso-8859-1');"
     echo "copy names      (name, hexid)      from '$DIR/dbs/names.key'      (format text, delimiter '|', encoding 'iso-8859-1');"
     echo "copy attributes (attribute, hexid) from '$DIR/dbs/attributes.key' (format text, delimiter '|', encoding 'iso-8859-1');"
@@ -93,6 +94,8 @@ psql < "import1.sql"
 ) | psql
 
 psql < "import2.sql"
+psql < "import3.sql"
+psql < "import4.sql"
 
 # The backslash madness simply replaces two backslashes in the data by one (to undo
 # the escaping added by Postgres in the text output format). Here we have to write
