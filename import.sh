@@ -105,3 +105,5 @@ psql < "import4.sql"
 # 3. in the shell invoked by Postgres to execute the output command.
 echo "copy movies_doc to program 'sed -e "s/\\\\\\\\\\\\\\\\/\\\\\\\\/g" | gzip > $DIR/movies_doc.json.gz' encoding 'utf-8';" | psql
 echo "copy people_doc to program 'sed -e "s/\\\\\\\\\\\\\\\\/\\\\\\\\/g" | gzip > $DIR/people_doc.json.gz' encoding 'utf-8';" | psql
+echo "copy movies_doc_small to program 'sed -e "s/\\\\\\\\\\\\\\\\/\\\\\\\\/g" | gzip > $DIR/movies_doc_small.json.gz' encoding 'utf-8';" | psql
+echo "copy people_doc_small to program 'sed -e "s/\\\\\\\\\\\\\\\\/\\\\\\\\/g" | gzip > $DIR/people_doc_small.json.gz' encoding 'utf-8';" | psql
