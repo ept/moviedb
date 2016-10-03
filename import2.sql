@@ -33,7 +33,7 @@ create table movies (
 insert into movies (id, title, series_id, properties) (
     select episodes.id, episode[3], series.id,
         jsonb_strip_nulls(jsonb_build_object(
-            'year', raw.year_from, 'year_to', raw.year_to, 'info', attribute,
+            'year', raw.year_from, 'year_to', raw.year_to, 'note', attribute,
             'suspended', case when episode[4] = ' {{SUSPENDED}}' then true else null end
         ))
     from (
@@ -50,7 +50,7 @@ insert into movies (id, title, series_id, properties) (
     select episodes.id, episode[3], series.id,
         jsonb_strip_nulls(jsonb_build_object(
             'year', raw.year_from, 'year_to', raw.year_to,
-            'info', attribute, 'suspended', true
+            'note', attribute, 'suspended', true
         ))
     from (
         select id, regexp_matches(title, '^"(.*)" (\([^\)]+\)) \{([^\{\}]*)\} \{\{SUSPENDED\}\}$') as episode from titles
@@ -66,7 +66,7 @@ insert into movies (id, title, series_id, properties) (
 insert into movies (id, title, is_series, properties) (
     select series.id, title_parts[1] || ' ' || title_parts[2], 'true',
         jsonb_strip_nulls(jsonb_build_object(
-            'year', year_from, 'year_to', year_to, 'info', attribute,
+            'year', year_from, 'year_to', year_to, 'note', attribute,
             'suspended', case when title_parts[3] = ' {{SUSPENDED}}' then true else null end
         ))
     from (
@@ -80,7 +80,7 @@ insert into movies (id, title, is_series, properties) (
 insert into movies (id, title, properties) (
     select movs.id, title_parts[1],
         jsonb_strip_nulls(jsonb_build_object(
-            'year', year_from, 'year_to', year_to, 'info', attribute,
+            'year', year_from, 'year_to', year_to, 'note', attribute,
             'suspended', case when title_parts[2] = ' {{SUSPENDED}}' then true else null end
         ))
     from (
@@ -129,70 +129,70 @@ create table credits (
 
 insert into credits (
     select name_id, title_id, 'actor',
-        jsonb_strip_nulls(jsonb_build_object('info', attribute, 'character', character, 'position', position))
+        jsonb_strip_nulls(jsonb_build_object('note', attribute, 'character', character, 'position', position))
     from actors
     left join attributes on attributes.id = attr_id
 );
 
 insert into credits (
     select name_id, title_id, 'actor',
-        jsonb_strip_nulls(jsonb_build_object('info', attribute, 'character', character, 'position', position))
+        jsonb_strip_nulls(jsonb_build_object('note', attribute, 'character', character, 'position', position))
     from actresses
     left join attributes on attributes.id = attr_id
 );
 
 insert into credits (
     select name_id, title_id, 'cinematographer',
-        jsonb_strip_nulls(jsonb_build_object('info', attribute))
+        jsonb_strip_nulls(jsonb_build_object('note', attribute))
     from cinematographers
     left join attributes on attributes.id = attr_id
 );
 
 insert into credits (
     select name_id, title_id, 'composer',
-        jsonb_strip_nulls(jsonb_build_object('info', attribute))
+        jsonb_strip_nulls(jsonb_build_object('note', attribute))
     from composers
     left join attributes on attributes.id = attr_id
 );
 
 insert into credits (
     select name_id, title_id, 'costume_designer',
-        jsonb_strip_nulls(jsonb_build_object('info', attribute))
+        jsonb_strip_nulls(jsonb_build_object('note', attribute))
     from costume_designers
     left join attributes on attributes.id = attr_id
 );
 
 insert into credits (
     select name_id, title_id, 'director',
-        jsonb_strip_nulls(jsonb_build_object('info', attribute))
+        jsonb_strip_nulls(jsonb_build_object('note', attribute))
     from directors
     left join attributes on attributes.id = attr_id
 );
 
 insert into credits (
     select name_id, title_id, 'editor',
-        jsonb_strip_nulls(jsonb_build_object('info', attribute))
+        jsonb_strip_nulls(jsonb_build_object('note', attribute))
     from editors
     left join attributes on attributes.id = attr_id
 );
 
 insert into credits (
     select name_id, title_id, 'miscellaneous',
-        jsonb_strip_nulls(jsonb_build_object('info', attribute))
+        jsonb_strip_nulls(jsonb_build_object('note', attribute))
     from miscellaneous
     left join attributes on attributes.id = attr_id
 );
 
 insert into credits (
     select name_id, title_id, 'producer',
-        jsonb_strip_nulls(jsonb_build_object('info', attribute))
+        jsonb_strip_nulls(jsonb_build_object('note', attribute))
     from producers
     left join attributes on attributes.id = attr_id
 );
 
 insert into credits (
     select name_id, title_id, 'production_designer',
-        jsonb_strip_nulls(jsonb_build_object('info', attribute))
+        jsonb_strip_nulls(jsonb_build_object('note', attribute))
     from production_designers
     left join attributes on attributes.id = attr_id
 );
@@ -200,7 +200,7 @@ insert into credits (
 insert into credits (
     select name_id, title_id, 'writer',
         jsonb_strip_nulls(jsonb_build_object(
-            'info', attribute, 'line_order', line_order,
+            'note', attribute, 'line_order', line_order,
             'group_order', group_order, 'subgroup_order', subgroup_order))
     from writers
     left join attributes on attributes.id = attr_id
