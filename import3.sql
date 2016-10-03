@@ -16,7 +16,7 @@ select jsonb_strip_nulls(jsonb_build_object(
     'color_info',           color_info_arr,
     'genres',               genre_arr,
     'keywords',             keyword_arr,
-    'language',             language_arr,
+    'languages',            language_arr,
     'locations',            location_arr,
     'release_dates',        reldate_obj,
     'running_times',        runtime_arr)) as properties
