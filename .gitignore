@@ -33,3 +33,8 @@
 /man/ltrace.1
 /man/mkballot.1
 /man/title.1
+docs/manual.aux
+docs/manual.log
+docs/manual.pdf
+docs/manual.toc
+/tmp

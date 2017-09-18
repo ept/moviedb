@@ -117,7 +117,7 @@ insert into people (select id, name, '{}'::jsonb from names) on conflict do noth
 
 create type credit_type as enum (
     'actor', 'cinematographer', 'composer', 'costume_designer', 'director',
-    'editor', 'miscellaneous', 'producer', 'production_designer', 'writer'
+    'editor', 'producer', 'writer'
 );
 
 create table credits (
@@ -176,12 +176,12 @@ insert into credits (
     left join attributes on attributes.id = attr_id
 );
 
-insert into credits (
-    select name_id, title_id, 'miscellaneous',
-        jsonb_strip_nulls(jsonb_build_object('note', attribute))
-    from miscellaneous
-    left join attributes on attributes.id = attr_id
-);
+-- insert into credits (
+--     select name_id, title_id, 'miscellaneous',
+--         jsonb_strip_nulls(jsonb_build_object('note', attribute))
+--     from miscellaneous
+--     left join attributes on attributes.id = attr_id
+-- );
 
 insert into credits (
     select name_id, title_id, 'producer',
@@ -190,12 +190,12 @@ insert into credits (
     left join attributes on attributes.id = attr_id
 );
 
-insert into credits (
-    select name_id, title_id, 'production_designer',
-        jsonb_strip_nulls(jsonb_build_object('note', attribute))
-    from production_designers
-    left join attributes on attributes.id = attr_id
-);
+-- insert into credits (
+--     select name_id, title_id, 'production_designer',
+--         jsonb_strip_nulls(jsonb_build_object('note', attribute))
+--     from production_designers
+--     left join attributes on attributes.id = attr_id
+-- );
 
 insert into credits (
     select name_id, title_id, 'writer',

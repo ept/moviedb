@@ -114,12 +114,14 @@ LDFLAGS = $(CFLAGS)
 # definition COMPRESS from the CFLAGS variable
 
 ZLISTEXT = .gz
-ZLISTCAT = /usr/bin/gzip
+#ZLISTCAT = /usr/bin/gzip
+ZLISTCAT = /bin/gzip
 ZLISTCATOPTS = -cd
 
 ZDBSCOMPRESS = gzip
 ZDBSEXT = .gz
-ZDBSCAT = /usr/bin/gzip
+#ZDBSCAT = /usr/bin/gzip
+ZDBSCAT = /bin/gzip
 ZDBSCATOPTS = -cd
 
 

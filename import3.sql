@@ -10,16 +10,17 @@ select jsonb_strip_nulls(jsonb_build_object(
     'directors',            credits_obj->'director',
     'editors',              credits_obj->'editor',
     'producers',            credits_obj->'producer',
-    'production_designers', credits_obj->'production_designer',
+--    'production_designers', credits_obj->'production_designer',
     'writers',              credits_obj->'writer',
     'certificates',         certificate_arr,
-    'color_info',           color_info_arr,
+--    'color_info',           color_info_arr,
     'genres',               genre_arr,
     'keywords',             keyword_arr,
     'languages',            language_arr,
     'locations',            location_arr,
-    'release_dates',        reldate_obj,
-    'running_times',        runtime_arr)) as properties
+    'release_dates',        reldate_obj
+--    'running_times',        runtime_arr
+    )) as properties
 from movies
 left join (
     select movie_id, jsonb_object_agg(type, items) credits_obj from (
@@ -47,12 +48,12 @@ left join (
     from certificates
     left join attributes on attributes.id = attr_id group by title_id
 ) certificates2 on certificates2.title_id = movies.id
-left join (
-    select title_id, jsonb_agg(jsonb_strip_nulls(jsonb_build_object(
-        'color_info', value, 'note', attribute)) order by value, attribute) as color_info_arr
-    from color_info
-    left join attributes on attributes.id = attr_id group by title_id
-) color_info2 on color_info2.title_id = movies.id
+-- left join (
+--     select title_id, jsonb_agg(jsonb_strip_nulls(jsonb_build_object(
+--         'color_info', value, 'note', attribute)) order by value, attribute) as color_info_arr
+--     from color_info
+--     left join attributes on attributes.id = attr_id group by title_id
+-- ) color_info2 on color_info2.title_id = movies.id
 left join (
     select title_id, jsonb_agg(jsonb_strip_nulls(jsonb_build_object(
         'language', value, 'note', attribute)) order by value, attribute) as language_arr
@@ -86,12 +87,12 @@ left join (
         ) reldates3 group by title_id, country
     ) reldates4 group by title_id
 ) reldates5 on reldates5.title_id = movies.id
-left join (
-    select title_id, jsonb_agg(jsonb_strip_nulls(jsonb_build_object(
-        'running_time', value, 'note', attribute)) order by value, attribute) as runtime_arr
-    from running_times
-    left join attributes on attributes.id = attr_id group by title_id
-) running_times2 on running_times2.title_id = movies.id
+-- left join (
+--     select title_id, jsonb_agg(jsonb_strip_nulls(jsonb_build_object(
+--         'running_time', value, 'note', attribute)) order by value, attribute) as runtime_arr
+--     from running_times
+--     left join attributes on attributes.id = attr_id group by title_id
+-- ) running_times2 on running_times2.title_id = movies.id
 left join top_titles on top_titles.title = movies.title
 where series_id is null and not is_series and properties->>'suspended' is null and movies.title ~ '\(\d{4}[^\)]*\)$'
     and (top_titles.title is not null or not only_top_titles)
@@ -110,7 +111,7 @@ select jsonb_strip_nulls(jsonb_build_object(
     'director_in',            credits_obj->'director',
     'editor_in',              credits_obj->'editor',
     'producer_in',            credits_obj->'producer',
-    'production_designer_in', credits_obj->'production_designer',
+--    'production_designer_in', credits_obj->'production_designer',
     'writer_in',              credits_obj->'writer')) as properties
 from people join (
     select person_id, jsonb_object_agg(type, items) as credits_obj from (
@@ -121,7 +122,7 @@ from people join (
         left join top_titles on top_titles.title = movies.title
         where series_id is null and not is_series and movies.properties->>'suspended' is null
             and movies.title ~ '\(\d{4}[^\)]*\)$' -- same filtering condition as for movies_doc
-            and type <> 'miscellaneous'
+--            and type <> 'miscellaneous'
             and (top_titles.title is not null or not only_top_titles)
         group by person_id, type
     ) credits2 group by person_id
